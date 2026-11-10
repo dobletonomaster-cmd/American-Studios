@@ -1,0 +1,7 @@
+{
+  "name": "pitch-eq-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pitch/velocidad + EQ de 10 bandas + exportación lossless FLAC / Ogg FLAC"
+}

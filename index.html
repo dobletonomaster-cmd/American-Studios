@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chipeo Presión V2 · Pitch &amp; EQ Studio</title>
+  <meta name="description" content="Cambia velocidad y tono, ecualiza en 10 bandas y exporta sin pérdida: FLAC, Ogg FLAC, WAV, AIFF, MP3, Opus y más.">
+  <meta name="theme-color" content="#0b0614">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Iconos / PWA -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/icon-16.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="msapplication-config" content="browserconfig.xml">
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Chipeo Presión V2 · Pitch &amp; EQ Studio">
+  <meta property="og:description" content="Velocidad + tono, EQ de 10 bandas y exportación lossless.">
+  <meta property="og:image" content="assets/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="assets/og-image.jpg">
+
+  <link rel="preload" as="image" href="assets/logo.webp" type="image/webp">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Fondo vivo -->
+  <div class="bg" aria-hidden="true">
+    <i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i>
+    <div class="floor"></div>
+    <canvas id="particles"></canvas>
+    <div class="grain"></div>
+  </div>
+
+  <main>
+    <!-- HERO -->
+    <header class="hero" id="hero">
+      <div class="stage" id="stage">
+        <canvas id="radial" aria-hidden="true"></canvas>
+        <div class="ring" aria-hidden="true"></div>
+        <div class="logo-wrap" id="logoWrap">
+          <picture>
+            <source srcset="assets/logo.avif" type="image/avif">
+            <source srcset="assets/logo.webp" type="image/webp">
+            <img class="logo" src="assets/logo.png" alt="Chipeo Presión V2" width="1024" height="1024" decoding="async" fetchpriority="high">
+          </picture>
+          <span class="shine" aria-hidden="true"></span>
+        </div>
+      </div>
+      <h1 class="title">Pitch <span>&amp;</span> EQ Studio</h1>
+      <p class="tagline"><b id="word">Velocidad</b> <span>sin límites · exporta en alta fidelidad</span></p>
+      <div class="marquee" aria-label="Formatos soportados">
+        <div class="track">
+          <span>FLAC</span><span>OGG FLAC</span><span>WAV 16/24</span><span>WAV 32f</span><span>AIFF</span><span>MP3</span><span>OPUS</span><span>AAC</span>
+          <span>FLAC</span><span>OGG FLAC</span><span>WAV 16/24</span><span>WAV 32f</span><span>AIFF</span><span>MP3</span><span>OPUS</span><span>AAC</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- CARGA -->
+    <section class="card reveal" id="drop">
+      <label class="dropzone" for="file">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <strong>Elige o arrastra un audio</strong>
+        <span>MP3, WAV, FLAC, OGG, OPUS, M4A, AAC, AIFF… lo que tu navegador decodifique · todo se procesa en tu equipo</span>
+      </label>
+      <input type="file" id="file" accept="audio/*,.flac,.opus,.aif,.aiff" hidden>
+      <div id="fileinfo" class="muted"></div>
+    </section>
+
+    <!-- PLAYER -->
+    <section class="card reveal" id="player">
+      <div class="row wrap">
+        <button id="play" class="btn primary" disabled>▶ Reproducir</button>
+        <button id="stop" class="btn" disabled>■ Stop</button>
+        <label class="check"><input type="checkbox" id="loop"> Loop</label>
+        <span id="time" class="mono pill">0:00 / 0:00</span>
+      </div>
+      <input type="range" id="seek" class="fill" min="0" max="1" step="0.01" value="0" disabled aria-label="Posición">
+    </section>
+
+    <!-- VELOCIDAD -->
+    <section class="card reveal">
+      <div class="split">
+        <div class="col">
+          <h2>Velocidad y tono</h2>
+          <p class="muted">Como un disco: más velocidad = tono más agudo; menos velocidad = más grave.</p>
+          <div class="row">
+            <input type="range" id="speed" class="fill" min="0.25" max="3" step="0.01" value="1" aria-label="Velocidad">
+            <output id="speedOut" class="big mono">1.00x</output>
+          </div>
+          <div class="row between wrap">
+            <span class="mono pill accent" id="pitchOut">Tono: +0.00 semitonos</span>
+            <span class="mono muted small" id="durOut"></span>
+          </div>
+          <div class="row wrap" id="speedPresets"></div>
+        </div>
+        <div class="vinyl-wrap" aria-hidden="true">
+          <div class="vinyl" id="vinyl"><img src="assets/icons/icon-96.png" alt=""></div>
+          <div class="arm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EQ -->
+    <section class="card reveal">
+      <div class="row between wrap">
+        <h2>Ecualizador de 10 bandas</h2>
+        <div class="row">
+          <select id="preset" aria-label="Preset"></select>
+          <button id="eqReset" class="btn">Reset</button>
+        </div>
+      </div>
+      <canvas id="curve" height="120" aria-label="Curva de respuesta del EQ"></canvas>
+      <div id="eq" class="eq"></div>
+      <div class="row">
+        <label for="pre" class="inline">Preamp</label>
+        <input type="range" id="pre" class="fill" min="-12" max="12" step="0.5" value="0">
+        <output id="preOut" class="mono pill">0 dB</output>
+      </div>
+      <p class="muted small">Doble clic en un slider lo regresa a 0 dB · rango ±12 dB.</p>
+    </section>
+
+    <!-- EXPORT -->
+    <section class="card reveal">
+      <h2>Exportar</h2>
+      <div class="grid">
+        <label>Formato
+          <select id="fmt">
+            <optgroup label="Sin pérdida">
+              <option value="flac">FLAC (.flac)</option>
+              <option value="oga">Ogg FLAC (.oga)</option>
+              <option value="wav">WAV PCM (.wav)</option>
+              <option value="wavf">WAV float 32-bit (.wav)</option>
+              <option value="aiff">AIFF (.aiff)</option>
+            </optgroup>
+            <optgroup label="Con pérdida" id="lossy">
+              <option value="mp3">MP3 (.mp3)</option>
+            </optgroup>
+          </select>
+        </label>
+        <label id="bpsWrap">Profundidad
+          <select id="bps"><option value="24" selected>24 bit</option><option value="16">16 bit</option></select>
+        </label>
+        <label id="kbpsWrap" hidden>Bitrate
+          <select id="kbps"><option>320</option><option>256</option><option>192</option><option>128</option></select>
+        </label>
+        <label>Sample rate
+          <select id="sr"></select>
+        </label>
+      </div>
+      <div class="row wrap">
+        <label class="check"><input type="checkbox" id="norm" checked> Evitar clipping (normaliza solo si pasa de 0 dBFS)</label>
+        <label class="check" id="ditherWrap"><input type="checkbox" id="dither" checked> Dither TPDF (16 bit)</label>
+      </div>
+      <p class="muted small" id="fmtNote"></p>
+      <div class="row">
+        <button id="export" class="btn primary glow" disabled>⬇ Procesar y descargar</button>
+        <progress id="prog" value="0" max="1" hidden></progress>
+      </div>
+      <pre id="log" aria-live="polite"></pre>
+    </section>
+
+    <footer class="muted small">Chipeo Presión V2 · Todo el audio se procesa localmente en tu navegador.</footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
